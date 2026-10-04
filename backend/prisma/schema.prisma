@@ -1,0 +1,211 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  patient
+  doctor
+  admin
+  receptionist
+}
+
+enum SlotStatus {
+  open
+  held
+  booked
+  blocked
+}
+
+enum AppointmentStatus {
+  booked
+  cancelled
+  completed
+  no_show
+  rescheduled
+}
+
+enum JobKind {
+  confirm
+  remind_24h
+  remind_2h
+  cancel_notice
+}
+
+enum Channel {
+  sms
+  email
+  whatsapp
+}
+
+enum JobStatus {
+  pending
+  sent
+  failed
+  cancelled
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  role          Role
+  email         String   @unique
+  phone         String?
+  password_hash String
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  patient       Patient?
+  doctor        Doctor?
+
+  @@map("users")
+}
+
+model Patient {
+  id            String   @id @default(uuid()) @db.Uuid
+  user_id       String   @unique @db.Uuid
+  full_name     String
+  dob           DateTime? @db.Date
+  no_show_count Int      @default(0)
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  appointments  Appointment[]
+  waitlists     Waitlist[]
+
+  @@map("patients")
+}
+
+model Department {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  icon        String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz
+
+  doctors     Doctor[]
+
+  @@map("departments")
+}
+
+model Doctor {
+  id             String   @id @default(uuid()) @db.Uuid
+  user_id        String?  @unique @db.Uuid
+  department_id  String   @db.Uuid
+  name           String
+  specialization String
+  slot_minutes   Int      @default(15)
+  overbook_limit Int      @default(0)
+  image_url      String?
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now()) @db.Timestamptz
+
+  user           User?          @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  department     Department     @relation(fields: [department_id], references: [id], onDelete: Restrict)
+  schedules      DoctorSchedule[]
+  slots          Slot[]
+  waitlists      Waitlist[]
+
+  @@map("doctors")
+}
+
+model DoctorSchedule {
+  id         String   @id @default(uuid()) @db.Uuid
+  doctor_id  String   @db.Uuid
+  weekday    Int
+  start_time String
+  end_time   String
+
+  doctor     Doctor   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+
+  @@map("doctor_schedules")
+}
+
+model Slot {
+  id         String     @id @default(uuid()) @db.Uuid
+  doctor_id  String     @db.Uuid
+  starts_at  DateTime   @db.Timestamptz
+  ends_at    DateTime   @db.Timestamptz
+  status     SlotStatus @default(open)
+
+  doctor     Doctor     @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@unique([doctor_id, starts_at])
+  @@map("slots")
+}
+
+model Appointment {
+  id            String            @id @default(uuid()) @db.Uuid
+  patient_id    String            @db.Uuid
+  slot_id       String            @db.Uuid
+  status        AppointmentStatus @default(booked)
+  created_at    DateTime          @default(now()) @db.Timestamptz
+  cancelled_at  DateTime?         @db.Timestamptz
+  reschedule_of String?           @db.Uuid
+  reason        String?
+
+  patient       Patient           @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  slot          Slot              @relation(fields: [slot_id], references: [id], onDelete: Restrict)
+  jobs          NotificationJob[]
+
+  @@map("appointments")
+}
+
+model NotificationJob {
+  id             String    @id @default(uuid()) @db.Uuid
+  appointment_id String    @db.Uuid
+  kind           JobKind
+  channel        Channel
+  recipient      String
+  payload        Json
+  run_at         DateTime  @db.Timestamptz
+  status         JobStatus @default(pending)
+  attempts       Int       @default(0)
+  last_error     String?
+  created_at     DateTime  @default(now()) @db.Timestamptz
+
+  appointment    Appointment @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+
+  @@unique([appointment_id, kind, channel])
+  @@map("notification_jobs")
+}
+
+model IdempotencyKey {
+  key          String   @id
+  request_hash String
+  response     String
+  expires_at   DateTime @db.Timestamptz
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  @@map("idempotency_keys")
+}
+
+model Waitlist {
+  id           String   @id @default(uuid()) @db.Uuid
+  patient_id   String   @db.Uuid
+  doctor_id    String   @db.Uuid
+  desired_date DateTime @db.Date
+  status       String   @default("waiting")
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  patient      Patient  @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor       Doctor   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+
+  @@map("waitlist")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actor_id   String?
+  action     String
+  entity     String
+  entity_id  String?
+  details    Json?
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  @@map("audit_log")
+}

@@ -20,6 +20,7 @@ import { BookingModal } from '../../components/BookingModal.js';
 import { MyAppointmentsModal } from '../../components/MyAppointmentsModal.js';
 import { AuthModal } from '../../components/AuthModal.js';
 import { ToastContainer, ToastMessage } from '../../components/Toast.js';
+import { HospitalLogo } from '../../components/HospitalLogo.js';
 
 export const LandingPage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -69,7 +70,7 @@ export const LandingPage: React.FC = () => {
           ===================================================================== */}
       <div className="max-w-6xl mx-auto mb-6 sm:mb-8 text-center sm:text-left">
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1B2B4B]">
-          Hospital UI
+          MEDI BOOK
         </h2>
         <p className="text-sm sm:text-base font-semibold text-[#1E4ED8] mt-0.5 tracking-wide">
           With online doctor consultation
@@ -137,16 +138,9 @@ export const LandingPage: React.FC = () => {
             (Home active --primary) · Sign in (filled) + Sign up (outlined)
             =================================================================== */}
         <header className="relative flex items-center justify-between pb-6 sm:pb-10 border-b border-slate-200/50">
-          {/* Logo Left */}
-          <div className="flex items-center gap-2.5 cursor-pointer">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#1E4ED8] text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 4v16m-8-8h16" strokeLinecap="round" />
-              </svg>
-            </div>
-            <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#1B2B4B]">
-              Hospital logo
-            </span>
+          {/* Logo Left: Minimalist vector logo with cupped hands, dual capsules & MEDIBOOK */}
+          <div className="cursor-pointer">
+            <HospitalLogo size="md" layout="horizontal" />
           </div>
 
           {/* Nav Center (Desktop: Home, Services▾, Doctors, About us, Contact us) */}

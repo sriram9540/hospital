@@ -3,6 +3,7 @@
  * Built with @electric-sql/pglite (Real PostgreSQL engine in Node.js)
  */
 import { PGlite } from '@electric-sql/pglite';
+import argon2 from 'argon2';
 import { logger } from './logger.js';
 
 let pgliteInstance: PGlite | null = null;
@@ -190,41 +191,15 @@ async function seedInitialData(client: PGlite): Promise<void> {
     return;
   }
 
-  // Pre-hashed passwords (bcrypt hash for "password123": '$2a$10$wK1Wq5rUv50g05gV0H7ZfOWjK9E1lC/gG4gK8WJ1b2fKqR1x7yG3e' or sha256)
-  // For standard compatibility without heavy native binaries, we use standard SHA256 with salt helper
-  const defaultHash = 'b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326bb5b2de39c55f018ac1ebd43714b30e16b'; // SHA-512 for 'password123'
+  const hash = async (p: string) => argon2.hash(p);
+  const defaultHash = 'b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326bb5b2de39c55f018ac1ebd43714b30e16b'; // fallback sha512 for password123
 
-  // Seed Users
-  const patientUser = await client.query(`
-    INSERT INTO users (role, email, phone, password_hash)
-    VALUES ('patient', 'patient@hospital.com', '+91 98765 43210', '${defaultHash}')
-    RETURNING id;
-  `);
-  const patientUserId = (patientUser.rows[0] as any).id;
-
-  await client.query(`
-    INSERT INTO patients (user_id, full_name, dob, no_show_count)
-    VALUES ('${patientUserId}', 'Alex Sharma', '1990-05-15', 0);
-  `);
-
-  const receptionistUser = await client.query(`
-    INSERT INTO users (role, email, phone, password_hash)
-    VALUES ('receptionist', 'reception@hospital.com', '+91 98765 11111', '${defaultHash}')
-    RETURNING id;
-  `);
-
-  const adminUser = await client.query(`
-    INSERT INTO users (role, email, phone, password_hash)
-    VALUES ('admin', 'admin@hospital.com', '+91 98765 99999', '${defaultHash}')
-    RETURNING id;
-  `);
-
-  // Seed Departments
+  // 1. Departments
   const deptData = [
     { name: 'Cardiology', description: 'Comprehensive heart & cardiovascular care', icon: 'Heart' },
     { name: 'Neurology', description: 'Brain, nerve, and spine disorders', icon: 'Brain' },
-    { name: 'Pediatrics', description: 'Specialized healthcare for infants and children', icon: 'Baby' },
     { name: 'Orthopedics', description: 'Bone, joint, and sports injury treatments', icon: 'Bone' },
+    { name: 'Pediatrics', description: 'Specialized healthcare for infants and children', icon: 'Baby' },
     { name: 'Dermatology', description: 'Advanced skin, hair, and cosmetic treatments', icon: 'Sparkles' },
     { name: 'General Medicine', description: 'Primary healthcare and preventive wellness', icon: 'Stethoscope' },
   ];
@@ -238,78 +213,103 @@ async function seedInitialData(client: PGlite): Promise<void> {
     deptIds[d.name] = (res.rows[0] as any).id;
   }
 
-  // Seed Doctors (§12 mentions East-Asian woman in lab coat, Black woman in teal scrubs)
-  const doctorData = [
-    {
-      name: 'Dr. Sarah Chen',
-      specialization: 'Senior Cardiologist & Heart Specialist',
-      dept: 'Cardiology',
-      email: 'sarah.chen@hospital.com',
-      slotMinutes: 30,
-    },
-    {
-      name: 'Dr. Maya Patel',
-      specialization: 'Chief Pediatrician & Child Health',
-      dept: 'Pediatrics',
-      email: 'maya.patel@hospital.com',
-      slotMinutes: 30,
-    },
-    {
-      name: 'Dr. Angela Davis',
-      specialization: 'Consultant Neurologist & Spine Expert',
-      dept: 'Neurology',
-      email: 'angela.davis@hospital.com',
-      slotMinutes: 30,
-    },
-    {
-      name: 'Dr. Robert Taylor',
-      specialization: 'Orthopedic Surgeon & Joint Care',
-      dept: 'Orthopedics',
-      email: 'robert.taylor@hospital.com',
-      slotMinutes: 30,
-    },
-    {
-      name: 'Dr. Emily Vance',
-      specialization: 'Dermatologist & Laser Specialist',
-      dept: 'Dermatology',
-      email: 'emily.vance@hospital.com',
-      slotMinutes: 30,
-    },
-    {
-      name: 'Dr. Rajiv Menon',
-      specialization: 'General Physician & Internal Medicine',
-      dept: 'General Medicine',
-      email: 'rajiv.menon@hospital.com',
-      slotMinutes: 30,
-    },
+  // 2. Admin + Receptionist users (§2 in user seed request)
+  const adminHash = await hash('Admin@123');
+  const receptHash = await hash('Recept@123');
+
+  await client.query(`
+    INSERT INTO users (role, email, phone, password_hash)
+    VALUES ('admin', 'admin@hospital.test', '+91 98765 99999', '${adminHash}');
+  `);
+
+  await client.query(`
+    INSERT INTO users (role, email, phone, password_hash)
+    VALUES ('receptionist', 'reception@hospital.test', '+91 98765 11111', '${receptHash}');
+  `);
+
+  // Also include default demo patient & staff
+  const patientUser = await client.query(`
+    INSERT INTO users (role, email, phone, password_hash)
+    VALUES ('patient', 'patient@hospital.com', '+91 98765 43210', '${defaultHash}')
+    RETURNING id;
+  `);
+  const patientUserId = (patientUser.rows[0] as any).id;
+  await client.query(`
+    INSERT INTO patients (user_id, full_name, dob, no_show_count)
+    VALUES ('${patientUserId}', 'Alex Sharma', '1990-05-15', 0);
+  `);
+
+  // 3. Doctors (12 doctors across 6 departments with slot_minutes: 15)
+  const doctorSeed = [
+    { name: 'Dr. Rajesh Menon', dept: 'Cardiology', email: 'dr.menon@hospital.test', spec: 'Senior Interventional Cardiologist' },
+    { name: 'Dr. Sarah Chen', dept: 'Cardiology', email: 'dr.chen@hospital.test', spec: 'Heart Failure & Arrhythmia Specialist' },
+    { name: 'Dr. Angela Davis', dept: 'Neurology', email: 'dr.davis@hospital.test', spec: 'Consultant Neurologist & Stroke Care' },
+    { name: 'Dr. David Miller', dept: 'Neurology', email: 'dr.miller@hospital.test', spec: 'Spine & Peripheral Nerve Specialist' },
+    { name: 'Dr. Robert Taylor', dept: 'Orthopedics', email: 'dr.taylor@hospital.test', spec: 'Orthopedic Surgeon & Joint Replacement' },
+    { name: 'Dr. Priya Sharma', dept: 'Orthopedics', email: 'dr.sharma@hospital.test', spec: 'Sports Injuries & Arthroscopy Expert' },
+    { name: 'Dr. Maya Patel', dept: 'Pediatrics', email: 'dr.patel@hospital.test', spec: 'Chief Pediatrician & Child Health' },
+    { name: 'Dr. Kevin White', dept: 'Pediatrics', email: 'dr.white@hospital.test', spec: 'Neonatal & Adolescent Specialist' },
+    { name: 'Dr. Emily Vance', dept: 'Dermatology', email: 'dr.vance@hospital.test', spec: 'Clinical Dermatologist & Laser Therapy' },
+    { name: 'Dr. Aisha Khan', dept: 'Dermatology', email: 'dr.khan@hospital.test', spec: 'Cosmetic & Aesthetic Skin Consultant' },
+    { name: 'Dr. James Wilson', dept: 'General Medicine', email: 'dr.wilson@hospital.test', spec: 'Senior Consultant Physician' },
+    { name: 'Dr. Sunita Rao', dept: 'General Medicine', email: 'dr.rao@hospital.test', spec: 'Internal Medicine & Preventive Care' },
   ];
 
+  const doctorHash = await hash('Doctor@123');
   const doctorIds: string[] = [];
-  for (const doc of doctorData) {
+
+  for (const doc of doctorSeed) {
     const userRes = await client.query(
-      `INSERT INTO users (role, email, password_hash) VALUES ('doctor', $1, '${defaultHash}') RETURNING id`,
+      `INSERT INTO users (role, email, password_hash) VALUES ('doctor', $1, '${doctorHash}') RETURNING id`,
       [doc.email]
     );
     const docUserId = (userRes.rows[0] as any).id;
     const docRes = await client.query(
       `INSERT INTO doctors (user_id, department_id, name, specialization, slot_minutes, overbook_limit, is_active)
-       VALUES ($1, $2, $3, $4, $5, 0, TRUE) RETURNING id`,
-      [docUserId, deptIds[doc.dept], doc.name, doc.specialization, doc.slotMinutes]
+       VALUES ($1, $2, $3, $4, 15, 0, TRUE) RETURNING id`,
+      [docUserId, deptIds[doc.dept], doc.name, doc.spec]
     );
     const docId = (docRes.rows[0] as any).id;
     doctorIds.push(docId);
 
-    // Seed Schedules: Monday through Saturday (1 to 6), 09:00 to 17:00
-    for (let day = 1; day <= 6; day++) {
+    // 4. Schedules: Mon-Fri morning 09:00-13:00 + afternoon 14:00-17:00, Sat morning 09:00-13:00
+    for (const weekday of [1, 2, 3, 4, 5]) {
       await client.query(
         `INSERT INTO doctor_schedules (doctor_id, weekday, start_time, end_time)
-         VALUES ($1, $2, '09:00', '17:00')`,
-        [docId, day]
+         VALUES ($1, $2, '09:00', '13:00'), ($1, $2, '14:00', '17:00')`,
+        [docId, weekday]
       );
     }
+    await client.query(
+      `INSERT INTO doctor_schedules (doctor_id, weekday, start_time, end_time)
+       VALUES ($1, 6, '09:00', '13:00')`,
+      [docId]
+    );
   }
 
-  // Pre-generate slots for today and next 14 days
+  // 5. Patients (patient1@test.com to patient5@test.com, password Pass@123)
+  const patientHash = await hash('Pass@123');
+  for (let i = 1; i <= 5; i++) {
+    const email = `patient${i}@test.com`;
+    const phone = `+91900000000${i}`;
+    const fullName = `Test Patient ${i}`;
+
+    const uRes = await client.query(
+      `INSERT INTO users (role, email, phone, password_hash)
+       VALUES ('patient', $1, $2, '${patientHash}')
+       RETURNING id`,
+      [email, phone]
+    );
+    const uId = (uRes.rows[0] as any).id;
+
+    await client.query(
+      `INSERT INTO patients (user_id, full_name, dob, no_show_count)
+       VALUES ($1, $2, '1990-01-01', 0)`,
+      [uId, fullName]
+    );
+  }
+
+  // Pre-generate live slots for doctors (15-min intervals, Mon-Sat)
   const now = new Date();
   for (let offset = 0; offset <= 14; offset++) {
     const targetDate = new Date(now.getTime() + offset * 86400000);
@@ -321,34 +321,29 @@ async function seedInitialData(client: PGlite): Promise<void> {
     const d = String(targetDate.getDate()).padStart(2, '0');
     const dateStr = `${y}-${m}-${d}`;
 
+    // Schedules: Mon-Fri (9-13, 14-17), Sat (9-13)
+    const timeBlocks = dayOfWeek === 6
+      ? [{ start: 9 * 60, end: 13 * 60 }]
+      : [{ start: 9 * 60, end: 13 * 60 }, { start: 14 * 60, end: 17 * 60 }];
+
     for (const docId of doctorIds) {
-      // 9:00 to 12:30, 14:00 to 16:30
-      const hours = [
-        ['09:00', '09:30'],
-        ['09:30', '10:00'],
-        ['10:00', '10:30'],
-        ['10:30', '11:00'],
-        ['11:00', '11:30'],
-        ['11:30', '12:00'],
-        ['12:00', '12:30'],
-        ['14:00', '14:30'],
-        ['14:30', '15:00'],
-        ['15:00', '15:30'],
-        ['15:30', '16:00'],
-        ['16:00', '16:30'],
-      ];
+      for (const block of timeBlocks) {
+        for (let min = block.start; min < block.end; min += 15) {
+          const sH = String(Math.floor(min / 60)).padStart(2, '0');
+          const sM = String(min % 60).padStart(2, '0');
+          const eH = String(Math.floor((min + 15) / 60)).padStart(2, '0');
+          const eM = String((min + 15) % 60).padStart(2, '0');
 
-      for (const [sTime, eTime] of hours) {
-        // Asia/Kolkata +05:30 ISO string
-        const startIso = `${dateStr}T${sTime}:00+05:30`;
-        const endIso = `${dateStr}T${eTime}:00+05:30`;
+          const startIso = `${dateStr}T${sH}:${sM}:00+05:30`;
+          const endIso = `${dateStr}T${eH}:${eM}:00+05:30`;
 
-        await client.query(
-          `INSERT INTO slots (doctor_id, starts_at, ends_at, status)
-           VALUES ($1, $2, $3, 'open')
-           ON CONFLICT (doctor_id, starts_at) DO NOTHING`,
-          [docId, startIso, endIso]
-        );
+          await client.query(
+            `INSERT INTO slots (doctor_id, starts_at, ends_at, status)
+             VALUES ($1, $2, $3, 'open')
+             ON CONFLICT (doctor_id, starts_at) DO NOTHING`,
+            [docId, startIso, endIso]
+          );
+        }
       }
     }
   }

@@ -48,7 +48,7 @@ async function startServer() {
 
   // Health check endpoint
   apiV1.get('/health', (req, res) => {
-    res.json({ status: 'ok', service: 'Hospital Appointment API', time: new Date().toISOString() });
+    res.json({ status: 'ok', service: 'MEDI BOOK Appointment API', time: new Date().toISOString() });
   });
 
   app.use('/api/v1', apiV1);

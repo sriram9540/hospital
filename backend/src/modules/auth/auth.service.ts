@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import argon2 from 'argon2';
 import { db } from '../../lib/db.js';
 import { CONFIG } from '../../lib/config.js';
 import { AppError, unauthenticated, validationError } from '../../lib/errors.js';
@@ -108,10 +109,21 @@ export class AuthService {
     }
 
     const user = userRes.rows[0];
-    const computedHash = hashPassword(input.password);
-    const defaultLegacyHash = 'b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326bb5b2de39c55f018ac1ebd43714b30e16b';
+    let passwordMatches = false;
 
-    if (user.password_hash !== computedHash && user.password_hash !== defaultLegacyHash) {
+    if (user.password_hash.startsWith('$argon2')) {
+      try {
+        passwordMatches = await argon2.verify(user.password_hash, input.password);
+      } catch {
+        passwordMatches = false;
+      }
+    } else {
+      const computedHash = hashPassword(input.password);
+      const defaultLegacyHash = 'b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326bb5b2de39c55f018ac1ebd43714b30e16b';
+      passwordMatches = (user.password_hash === computedHash || user.password_hash === defaultLegacyHash);
+    }
+
+    if (!passwordMatches) {
       unauthenticated('Invalid email or password');
     }
 

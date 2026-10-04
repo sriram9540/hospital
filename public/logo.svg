@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140" width="100%" height="100%">
+  <!-- Background: White (per prompt: "Flat vector, white background, clean SaaS style") -->
+  <rect width="200" height="140" fill="#FFFFFF" rx="16" />
+
+  <g transform="translate(0, 4)">
+    <!-- ==========================================
+         TWO OVERLAPPING CAPSULES
+         Capsule 1: Royal Blue (#1E4ED8)
+         Capsule 2: Vibrant Green (#22C55E)
+         ========================================== -->
+    <!-- Royal Blue Capsule (angled -24 deg) -->
+    <g transform="rotate(-24 86 44)">
+      <rect x="62" y="33" width="48" height="22" rx="11" fill="#1E4ED8" />
+      <!-- Capsule divider line & white gloss accent -->
+      <line x1="86" y1="33" x2="86" y2="55" stroke="#FFFFFF" stroke-width="1.8" stroke-opacity="0.8" />
+      <path d="M 68 37 Q 80 35 84 37" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.6" />
+    </g>
+
+    <!-- Green Capsule (angled +24 deg, overlapping) -->
+    <g transform="rotate(24 114 44)">
+      <rect x="90" y="33" width="48" height="22" rx="11" fill="#22C55E" />
+      <!-- Capsule divider line & white gloss accent -->
+      <line x1="114" y1="33" x2="114" y2="55" stroke="#FFFFFF" stroke-width="1.8" stroke-opacity="0.8" />
+      <path d="M 118 37 Q 130 35 134 37" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.6" />
+    </g>
+
+    <!-- ==========================================
+         SMALL CALENDAR ICON MERGED INTO CAPSULES
+         ========================================== -->
+    <g transform="translate(89, 31)">
+      <!-- Calendar Body with soft drop contrast -->
+      <rect x="0" y="3" width="22" height="21" rx="4" fill="#FFFFFF" stroke="#1B2B4B" stroke-width="1.6" />
+      <!-- Calendar Header Bar in Royal Blue -->
+      <path d="M 0.8 9.5 L 21.2 9.5" stroke="#1E4ED8" stroke-width="2.6" stroke-linecap="round" />
+      <!-- Twin Binder Rings -->
+      <rect x="4.5" y="0.8" width="2.2" height="4.5" rx="1.1" fill="#1B2B4B" />
+      <rect x="15.3" y="0.8" width="2.2" height="4.5" rx="1.1" fill="#1B2B4B" />
+      <!-- Calendar Grid Matrix -->
+      <circle cx="5.5" cy="14" r="1.3" fill="#1E4ED8" />
+      <circle cx="11" cy="14" r="1.3" fill="#22C55E" />
+      <circle cx="16.5" cy="14" r="1.3" fill="#1E4ED8" />
+      <circle cx="5.5" cy="18.5" r="1.3" fill="#22C55E" />
+      <circle cx="11" cy="18.5" r="1.3" fill="#1E4ED8" />
+      <circle cx="16.5" cy="18.5" r="1.3" fill="#22C55E" />
+    </g>
+
+    <!-- ==========================================
+         TWO ROYAL BLUE (#1E4ED8) CUPPED HANDS
+         Supporting the capsules from below
+         ========================================== -->
+    <!-- Left Cupped Hand -->
+    <path
+      d="M 44 64
+         C 43 72, 48 80, 58 86
+         C 68 92, 80 94, 95 91
+         C 98 90, 99 87, 97 84
+         C 95 81, 91 82, 88 83
+         C 76 86, 66 84, 58 79
+         C 52 75, 48 69, 48 63
+         C 48 59, 44 59, 44 64 Z"
+      fill="#1E4ED8"
+    />
+    <!-- Left Hand Thumb / Palm Curve Accent -->
+    <path
+      d="M 54 58
+         C 54 66, 62 72, 73 74
+         C 76 75, 78 72, 76 70
+         C 67 68, 60 63, 60 57
+         C 60 54, 54 54, 54 58 Z"
+      fill="#1E4ED8"
+      opacity="0.85"
+    />
+
+    <!-- Right Cupped Hand (Symmetric) -->
+    <path
+      d="M 156 64
+         C 157 72, 152 80, 142 86
+         C 132 92, 120 94, 105 91
+         C 102 90, 101 87, 103 84
+         C 105 81, 109 82, 112 83
+         C 124 86, 134 84, 142 79
+         C 148 75, 152 69, 152 63
+         C 152 59, 156 59, 156 64 Z"
+      fill="#1E4ED8"
+    />
+    <!-- Right Hand Thumb / Palm Curve Accent -->
+    <path
+      d="M 146 58
+         C 146 66, 138 72, 127 74
+         C 124 75, 122 72, 124 70
+         C 133 68, 140 63, 140 57
+         C 140 54, 146 54, 146 58 Z"
+      fill="#1E4ED8"
+      opacity="0.85"
+    />
+  </g>
+
+  <!-- ==========================================
+       TEXT "MEDIBOOK"
+       Thin navy (#1B2B4B) sans-serif, letter-spaced
+       ========================================== -->
+  <text
+    x="100"
+    y="122"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif"
+    font-size="14.5"
+    font-weight="300"
+    letter-spacing="0.32em"
+    fill="#1B2B4B"
+    text-anchor="middle"
+  >
+    MEDIBOOK
+  </text>
+</svg>
