@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@keyframes floatY {
+  0%, 100% {
+    transform: translateY(0px) rotate(var(--rot, 0deg));
+  }
+  50% {
+    transform: translateY(-8px) rotate(var(--rot, 0deg));
+  }
+}
+
+:root {
+  --bg-page: #C9D8F8;
+  --bg-card: #F7F8FC;
+  --primary: #1E4ED8;
+  --primary-dark: #1638B0;
+  --navy: #1B2B4B;
+  --muted: #6B7280;
+  --ring-blue: #2563EB;
+}

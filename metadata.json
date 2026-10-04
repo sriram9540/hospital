@@ -1,0 +1,6 @@
+{
+  "name": "Hospital UI - Doctor Consultation & Appointments",
+  "description": "Hospital appointment booking system with department and doctor live slot availability, instant booking, reschedule, cancel, and reminder engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
