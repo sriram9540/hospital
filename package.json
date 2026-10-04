@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build",
+    "build": "vite build && mkdir -p frontend/dist && cp -r dist/* frontend/dist/",
     "seed": "tsx backend/prisma/seed.ts",
     "test": "vitest run",
     "preview": "vite preview",
